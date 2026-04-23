@@ -1,0 +1,82 @@
+[
+  {
+    "id": "hair_dryer",
+    "name": "Hair dryer bank",
+    "category": "luxury",
+    "watts_avg": 2200,
+    "start_up_spike_w": 2600,
+    "revenue_if_running_rwf_per_h": 12000
+  },
+  {
+    "id": "music",
+    "name": "Bluetooth speaker",
+    "category": "luxury",
+    "watts_avg": 40,
+    "start_up_spike_w": 60,
+    "revenue_if_running_rwf_per_h": 2500
+  },
+  {
+    "id": "ac_unit",
+    "name": "Split AC",
+    "category": "comfort",
+    "watts_avg": 1800,
+    "start_up_spike_w": 3200,
+    "revenue_if_running_rwf_per_h": 18000
+  },
+  {
+    "id": "water_heater",
+    "name": "Water heater",
+    "category": "comfort",
+    "watts_avg": 2000,
+    "start_up_spike_w": 2000,
+    "revenue_if_running_rwf_per_h": 8000
+  },
+  {
+    "id": "lights",
+    "name": "LED lighting (full shop)",
+    "category": "comfort",
+    "watts_avg": 350,
+    "start_up_spike_w": 400,
+    "revenue_if_running_rwf_per_h": 14000
+  },
+  {
+    "id": "fridge_display",
+    "name": "Display fridge",
+    "category": "critical",
+    "watts_avg": 250,
+    "start_up_spike_w": 800,
+    "revenue_if_running_rwf_per_h": 22000
+  },
+  {
+    "id": "cold_room_comp",
+    "name": "Cold-room compressor",
+    "category": "critical",
+    "watts_avg": 3500,
+    "start_up_spike_w": 7000,
+    "revenue_if_running_rwf_per_h": 45000
+  },
+  {
+    "id": "sewing_motor",
+    "name": "Industrial sewing motor",
+    "category": "critical",
+    "watts_avg": 400,
+    "start_up_spike_w": 900,
+    "revenue_if_running_rwf_per_h": 28000
+  },
+  {
+    "id": "pos",
+    "name": "POS + router",
+    "category": "critical",
+    "watts_avg": 80,
+    "start_up_spike_w": 120,
+    "revenue_if_running_rwf_per_h": 9000
+  },
+  {
+    "id": "security",
+    "name": "CCTV + alarm hub",
+    "category": "critical",
+    "watts_avg": 60,
+    "start_up_spike_w": 90,
+    "revenue_if_running_rwf_per_h": 5000
+  }
+]

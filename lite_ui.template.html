@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Grid digest · salon</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { margin: 0 auto; max-width: 980px; padding: 12px 14px 28px; line-height: 1.35; }
+    h1 { font-size: 1.15rem; margin: 0 0 8px; }
+    h2 { font-size: 1rem; margin: 18px 0 6px; }
+    .meta { opacity: .85; font-size: .9rem; margin-bottom: 10px; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid #8886; font-size: .78rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    th, td { border-bottom: 1px solid #8884; padding: 4px 6px; text-align: left; }
+    th { font-weight: 600; }
+    canvas { width: 100% !important; height: 360px !important; }
+    .on { color: #0a7f2e; font-weight: 600; }
+    .off { color: #b00020; font-weight: 600; }
+    .grid2 { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 860px) { .grid2 { grid-template-columns: 2.1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <h1>24h outage outlook + appliance plan</h1>
+  <div class="meta"><span class="pill" id="bizPill"></span> · <span id="latency"></span></div>
+  <div class="grid2">
+    <div>
+      <h2>Forecast band (probability) + realized outages</h2>
+      <canvas id="fc"></canvas>
+    </div>
+    <div>
+      <h2>Plan snapshot</h2>
+      <div id="planSnap" class="meta"></div>
+    </div>
+  </div>
+  <h2>Hourly appliance states</h2>
+  <div style="overflow:auto; max-height: 420px;">
+    <table id="tbl"><thead></thead><tbody></tbody></table>
+  </div>
+  <script>
+    const UI = /*__UI_JSON_BEGIN__*/{}/*__UI_JSON_END__*/;
+    const hours = UI.forecast.length;
+    const labels = UI.forecast.map((x) => x.timestamp.slice(11, 16));
+    const p = UI.forecast.map((x) => x.p_outage);
+    const lo = UI.forecast.map((x) =>
+      x.p_outage_low != null ? x.p_outage_low : Math.max(0, x.p_outage - 1.96 * Math.sqrt(x.p_outage * (1 - x.p_outage)))
+    );
+    const hi = UI.forecast.map((x) =>
+      x.p_outage_high != null ? x.p_outage_high : Math.min(1, x.p_outage + 1.96 * Math.sqrt(x.p_outage * (1 - x.p_outage)))
+    );
+    const truth = (UI.truth || []).map((x) => x.outage);
+    const cat = UI.appliance_category || {};
+    const luxOn = UI.plan.hours.map((row) =>
+      Object.keys(row.appliances).filter((id) => cat[id] === "luxury" && row.appliances[id] === "ON").length
+    );
+    const comfOn = UI.plan.hours.map((row) =>
+      Object.keys(row.appliances).filter((id) => cat[id] === "comfort" && row.appliances[id] === "ON").length
+    );
+    const critOn = UI.plan.hours.map((row) =>
+      Object.keys(row.appliances).filter((id) => cat[id] === "critical" && row.appliances[id] === "ON").length
+    );
+
+    document.getElementById("bizPill").textContent = UI.business.name + " · " + UI.business.generator_watts + " W gen";
+    document.getElementById("latency").textContent = "CPU infer: " + (UI.latency_ms || 0).toFixed(1) + " ms";
+
+    const ctx = document.getElementById("fc");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label: "p(outage)", data: p, borderColor: "#2563eb", tension: 0.15, fill: false },
+          { label: "p quantile low (5%)", data: lo, borderColor: "#93c5fd", borderDash: [4, 3], pointRadius: 0, tension: 0.15 },
+          { label: "p quantile high (95%)", data: hi, borderColor: "#93c5fd", borderDash: [4, 3], pointRadius: 0, tension: 0.15 },
+          { label: "realized outage", data: truth, stepped: true, borderColor: "#f97316", fill: false, yAxisID: "y" },
+          { label: "luxury ON", data: luxOn, stepped: true, borderColor: "#a855f7", yAxisID: "y1", fill: false },
+          { label: "comfort ON", data: comfOn, stepped: true, borderColor: "#14b8a6", yAxisID: "y1", fill: false },
+          { label: "critical ON", data: critOn, stepped: true, borderColor: "#22c55e", yAxisID: "y1", fill: false },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { min: 0, max: 1, title: { display: true, text: "probability / 0-1" } },
+          y1: {
+            position: "right",
+            min: 0,
+            max: 8,
+            grid: { drawOnChartArea: false },
+            title: { display: true, text: "appliances ON (plan)" },
+          },
+        },
+        plugins: { legend: { display: true } },
+      },
+    });
+
+    const first = UI.plan.hours[0];
+    const ids = Object.keys(first.appliances).sort();
+    const onn = ids.filter((id) => first.appliances[id] === "ON").length;
+    document.getElementById("planSnap").textContent =
+      "First hour ON: " + onn + " / " + ids.length + " · shed order: " + UI.plan.shed_order.slice(0, 4).join(", ") + "…";
+
+    const thead = document.querySelector("#tbl thead");
+    const tbody = document.querySelector("#tbl tbody");
+    const hr = document.createElement("tr");
+    hr.innerHTML = "<th>UTC</th><th>p</th>" + ids.map((id) => "<th>" + id + "</th>").join("");
+    thead.appendChild(hr);
+    UI.plan.hours.forEach((row, i) => {
+      const tr = document.createElement("tr");
+      const ts = (row.timestamp || UI.forecast[i].timestamp).slice(11, 16);
+      const pc = (UI.forecast[i].p_outage || 0).toFixed(2);
+      tr.innerHTML =
+        "<td>" + ts + "</td><td>" + pc + "</td>" +
+        ids
+          .map((id) => {
+            const st = row.appliances[id];
+            const cls = st === "ON" ? "on" : "off";
+            return "<td class='" + cls + "'>" + st + "</td>";
+          })
+          .join("");
+      tbody.appendChild(tr);
+    });
+  </script>
+</body>
+</html>

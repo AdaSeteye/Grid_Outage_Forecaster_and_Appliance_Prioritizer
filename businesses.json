@@ -1,0 +1,40 @@
+[
+  {
+    "id": "salon",
+    "name": "Urban salon",
+    "generator_watts": 6500,
+    "appliance_ids": [
+      "hair_dryer",
+      "music",
+      "ac_unit",
+      "water_heater",
+      "lights",
+      "fridge_display",
+      "pos"
+    ]
+  },
+  {
+    "id": "cold_room",
+    "name": "Produce cold room",
+    "generator_watts": 9000,
+    "appliance_ids": [
+      "cold_room_comp",
+      "lights",
+      "security",
+      "pos",
+      "water_heater"
+    ]
+  },
+  {
+    "id": "tailor",
+    "name": "Neighborhood tailor",
+    "generator_watts": 3500,
+    "appliance_ids": [
+      "sewing_motor",
+      "lights",
+      "music",
+      "ac_unit",
+      "pos"
+    ]
+  }
+]
