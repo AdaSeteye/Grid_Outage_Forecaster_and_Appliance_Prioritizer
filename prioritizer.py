@@ -1,4 +1,4 @@
-"""24h ON/OFF plan: shed luxury→comfort→critical (revenue/W ties); maximize expected revenue among ON sets that fit the generator (no overload on backup)."""
+"""24h ON/OFF plan: shed luxury→comfort→critical (revenue/W ties); maximize revenue among ON sets that fit the generator on running load and on simultaneous start-up spikes."""
 from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Mapping, Sequence, Tuple
@@ -20,6 +20,10 @@ def _shed_sort_key(app: Mapping[str, Any]) -> Tuple[int, float, str]:
     cat = str(app["category"])
     rpw = _rev_per_w(app)
     return (_CAT_RANK.get(cat, 99), rpw, str(app.get("id", app.get("name", ""))))
+
+
+def _spike_w(app: Mapping[str, Any]) -> float:
+    return float(app.get("start_up_spike_w", app["watts_avg"]))
 
 
 def plan(
@@ -46,7 +50,8 @@ def plan(
             kept = shed_order[k:]
             on_rev = sum(float(a["revenue_if_running_rwf_per_h"]) for a in kept)
             on_w = sum(float(a["watts_avg"]) for a in kept)
-            if on_w > generator_watts:
+            on_spike = sum(_spike_w(a) for a in kept)
+            if on_w > generator_watts or on_spike > generator_watts:
                 continue
             e = (1.0 - p) * on_rev + p * on_rev
             tie = 1e-9 * (n - k)
