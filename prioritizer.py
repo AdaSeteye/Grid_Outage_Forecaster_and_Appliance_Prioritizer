@@ -1,4 +1,4 @@
-"""24h appliance ON/OFF plan: shed luxury→comfort→critical; ties by lowest revenue/W first; maximize expected revenue under generator watts (overload ⇒ no outage revenue)."""
+"""24h ON/OFF plan: shed luxury→comfort→critical (revenue/W ties); maximize expected revenue among ON sets that fit the generator (no overload on backup)."""
 from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Mapping, Sequence, Tuple
@@ -34,22 +34,21 @@ def plan(
     apps = list(appliances)
     shed_order = sorted(apps, key=_shed_sort_key)
     order_ids = [str(a.get("id", a["name"])) for a in shed_order]
+    n = len(shed_order)
 
     hours_out: List[Dict[str, Any]] = []
     for fh in forecast:
         p = float(fh["p_outage"])
-        best_k = 0
+        best_k = n
         best_score = -1e30
-        n = len(shed_order)
 
         for k in range(0, n + 1):
             kept = shed_order[k:]
             on_rev = sum(float(a["revenue_if_running_rwf_per_h"]) for a in kept)
             on_w = sum(float(a["watts_avg"]) for a in kept)
-            if on_w <= generator_watts:
-                e = (1.0 - p) * on_rev + p * on_rev
-            else:
-                e = (1.0 - p) * on_rev
+            if on_w > generator_watts:
+                continue
+            e = (1.0 - p) * on_rev + p * on_rev
             tie = 1e-9 * (n - k)
             score = e + tie
             if score > best_score:
